@@ -74,7 +74,7 @@ void unsubscribe(TQueue *queue, pthread_t thread)
         usunięcie sub. ze wszystkich wiadomości, które mógł odczytać, (jeśli są)
         (nawet jeśli po usunięciu sub. nie będzie miał kto odczytać wiadomości to usunie się ona w momencie pobrania)
     */
-    for (int i=0; i<queue->count_mess; i++)
+    for (int i=queue->count_mess-1; i>=0; i--)
     {
         for (int j=0; j<queue->read_counters[i]; j++) 
         {
@@ -85,21 +85,21 @@ void unsubscribe(TQueue *queue, pthread_t thread)
                     queue->who_can_read[i][k]=queue->who_can_read[i][k+1];
                 }
                 queue->read_counters[i]--;
-                break; //sub. może odczytać daną wiadomość tylko raz
-            }
-
-            if (queue->read_counters[i] == 0) //jeśli nie ma kto odczytać to usuwa wiadomość
-            {
-                for (int j=i; j<queue->count_mess-1; j++)
+                
+                if (queue->read_counters[i] == 0) //jeśli nie ma kto odczytać to usuwa wiadomość
                 {
-                    queue->mess[j] = queue->mess[j+1];
-                    queue->who_can_read[j] = queue->who_can_read[j+1];
-                    queue->read_counters[j] = queue->read_counters[j+1];
-                }
-                queue->count_mess--;
+                    for (int j=i; j<queue->count_mess-1; j++)
+                    {
+                        queue->mess[j] = queue->mess[j+1];
+                        queue->who_can_read[j] = queue->who_can_read[j+1];
+                        queue->read_counters[j] = queue->read_counters[j+1];
+                    }
+                    queue->count_mess--;
 
-                //sygnał, że wiadomość została usunięta
-                pthread_cond_broadcast(&queue->delete_mess);
+                    //sygnał, że wiadomość została usunięta
+                    pthread_cond_broadcast(&queue->delete_mess);
+                }
+                break; //sub. może odczytać daną wiadomość tylko raz
             }
         }
     }
@@ -117,31 +117,17 @@ void addMsg(TQueue *queue, void *msg)
     //jeśli nie ma subskrybentów to nie dodaje wiadomości do kolejki
     if (queue->sub > 0)
     {
-        /*
-            nowo dodana wiadomość jest dodawana na początek tablicy
-            count_mess-1 wskazuje na wiadomość która może być aktualnie pobierana
-        */
-        if (queue->count_mess > 1)
+        //nowo dodana wiadomość jest dodawana na początek tablicy, więc od końca wszystkie wiadomości przesuwamy
+        for (int i=queue->count_mess; i>0; i--) 
         {
-            for (int i=queue->count_mess; i>0; i--) 
-            {
-                queue->mess[i] = queue->mess[i-1];
-                queue->who_can_read[i] = queue->who_can_read[i-1];
-                queue->read_counters[i] = queue->read_counters[i-1];
-            }
-        }
-        else if (queue->count_mess == 1)
-        {
-            queue->mess[1] = queue->mess[0];
-            queue->who_can_read[1] = queue->who_can_read[0];
-            queue->read_counters[1] = queue->read_counters[0];
+            queue->mess[i] = queue->mess[i-1];
+            queue->who_can_read[i] = queue->who_can_read[i-1];
+            queue->read_counters[i] = queue->read_counters[i-1];
         }
         
         queue->mess[0] = msg;
-        /*
-            zapisywanie, którzy subskrybenci mogą odczytać dodawaną wiadomość
-        */
-        queue->read_counters[0]=queue->sub;
+        queue->read_counters[0]=queue->sub; 
+        //zapisywanie, którzy subskrybenci mogą odczytać dodawaną wiadomość
         queue->who_can_read[0] = malloc(sizeof(pthread_t *) * queue->sub);
         for (int i=0; i<queue->sub; i++) 
         {
@@ -205,7 +191,6 @@ void* getMsg(TQueue *queue, pthread_t thread)
                         
                     //wysyła sygnał, gdy zostaje usunięta wiadomość
                     pthread_cond_broadcast(&queue->delete_mess);
-                    
                 }
 
                 pthread_mutex_unlock(&queue->mutex);
