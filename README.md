@@ -3,7 +3,7 @@
   <h3>Programowanie systemowe i współbieżne</h3>
   <h3>Daria Szwałek 159666</h3>
   <h3>daria.szwalek@student.put.poznan.pl</h3>
-  <h3>2024-11-07</h3>
+  <h3>2025-01-26</h3>
 </div> 
 
 
