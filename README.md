@@ -18,7 +18,7 @@ Pliki w tym projekcie zawierają:
 
 Dla wiadomości:
 ```
-                              m1: 1      m2: 2      m3: 3     m4: 4     m5: 5     m6: 6     m7: 7
+          m1: 1      m2: 2      m3: 3     m4: 4     m5: 5     m6: 6     m7: 7
 ```
 Wynik pliku test.c wynosi: (-X- jest oczekiwaną odpowiedzią)
 ```c
@@ -55,31 +55,31 @@ Koniec
 
 Wizualizacja wyniku z pliku test.c:
 ```python
-                            ─────────────────────────────────────────────────────────────────────────
-                             Faza      Wątek T₁       Wątek T₂         Wątek T₃         Wątek T₄
-                            ─────────────────────────────────────────────────────────────────────────
-                              1:       put(m₁)
-                              2:                     subscribe()
-                              3:       put(m₂)
-                              4:                    1←getAvail()     subscribe()
-                              5:                                       get()
-                              6:                      m₂←get()           │
-                              7:                       get()             │
-                              8:       put(m₃)          │                │
-                              9:                       m₃←              m₃←
-                              10:     setSize(2)
-                              11:      put(m₄)
-                              12:                   1←getAvail()     1←getAvail()      subscribe()
-                              13:      put(m₅)
-                              14:      put(m₆)      2←getAvail()     2←getAvail()     1←getAvail()
-                              15:        │                                            unsubscribe()
-                              16:        │                            m₄←get()
-                              17:        ┴            m₄←get()
-                              18:                                   unsubscribe()
-                              19:      put(m₇)
-                              20:        │          2←getAvail()
-                              21:        ┴            m₅←get()
-                              22:                     m₆←get()
-                              23:                     m₇←get()
-                            ─────────────────────────────────────────────────────────────────────────
+─────────────────────────────────────────────────────────────────────────
+Faza      Wątek T₁       Wątek T₂         Wątek T₃         Wątek T₄
+─────────────────────────────────────────────────────────────────────────
+ 1:       put(m₁)
+ 2:                     subscribe()
+ 3:       put(m₂)
+ 4:                    1←getAvail()     subscribe()
+ 5:                                       get()
+ 6:                      m₂←get()           │
+ 7:                       get()             │
+ 8:       put(m₃)          │                │
+ 9:                       m₃←              m₃←
+ 10:     setSize(2)
+ 11:      put(m₄)
+ 12:                   1←getAvail()     1←getAvail()      subscribe()
+ 13:      put(m₅)
+ 14:      put(m₆)      2←getAvail()     2←getAvail()     1←getAvail()
+ 15:        │                                            unsubscribe()
+ 16:        │                            m₄←get()
+ 17:        ┴            m₄←get()
+ 18:                                   unsubscribe()
+ 19:      put(m₇)
+ 20:        │          2←getAvail()
+ 21:        ┴            m₅←get()
+ 22:                     m₆←get()
+ 23:                     m₇←get()
+─────────────────────────────────────────────────────────────────────────
 ```
