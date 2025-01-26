@@ -1,5 +1,7 @@
-# Publish_Subscribe
-Projekt na przedmiot Programowanie Systemowe i Współbieżne.
+<div align="center">
+  <h1>Publish_Subscribe</h1>
+  <p>Projekt na przedmiot Programowanie Systemowe i Współbieżne.</p>
+</div> 
 
 Jest to zaimplementowany system dystrybucji wiadomości o ograniczonej pojemności.
 Dowolny wątek może zasubskrybować, od tego momentu ma możliwość pobierania wiadomości z kolejki. Każda wiadomość, zanim zostanie
