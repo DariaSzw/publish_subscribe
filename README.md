@@ -7,54 +7,59 @@
 
 
 Projekt jest dostępny w repozytorium pod adresem:  
-<https://git.cs.put.poznan.pl/voytek/project1>.
+<https://github.com/DariaSzw/publish_subscribe>.
 
+# 1. Struktury danych
+W celu rozwiązania zadania, potrzebne jest zadeklarowanie struktury kolejki `TQueue`:
+```C
+struct TQueue {
+  pthread_t subscribers[2000]; //liczba możliwych subskrybentów
+  int sub; //liczba subskrybentów
+  void **mess; //tablica wskaźników - wiadomości
+  int count_mess; //liczba wiadomości
+  int max_size; //maksymalna wielkość kolejki wiadomości
+  pthread_t **who_can_read; //tablica dwuwymiarowa z informacjami kto może odczytać daną wiadomość
+  int *read_counters; //tablica informująca ile osób może odczytać daną wiadomość
+  
+  pthread_mutex_t mutex; 
+  pthread_cond_t delete_mess; //gdy wątek chce dodać wiadomość, ale kolejka jest pełna, czeka na sygnał usunięcia wiadomości
+  pthread_cond_t new_mess; //gdy wątek chce pobrać wiadomość, ale kolejka jest pusta, czeka na sygnał dodania nowej wiadomości
+};
+typedef struct TQueue TQueue;
+```
+# 2. Funkcje
 
-# Struktury danych
+Funkcje potrzebne w rozwiązaniu zadania:
 
-W tym punkcie przedstaw i krótko opisz struktury danych zaprojektowane i użyte
-w implementacji.  Opis powinien uzględniać prezentację istotnych zmiennych i
--- jeśli to istotne -- możliwych wartości składowanych w nich.  Przygotowując
-sprawozdanie warto mieć na względzie jego cel: umożliwienie zrozumienia
-algorytmu i implementacji prezentowanego rozwiązania.
+1. `TQueue* createQueue(int size)`
+    * inicjuje strukturę `TQueue` reprezentującą nową kolejkę o początkowym, maksymalnym
+rozmiarze `size`,
+2. `void destroyQueue(TQueue *queue)`
+    * usuwa kolejkę queue i zwalnia pamięć przez nią zajmowaną,
+    * próba dostarczania lub odbioru nowych wiadomości z kolejki skończy się błędem,
+3. `void subscribe(TQueue *queue, pthread_t thread)`
+    * rejestruje wątek `thread` jako kolejnego odbiorcę wiadomości z kolejki `queue`,
+4. `void unsubscribe(TQueue *queue, pthread_t thread)`
+    * wyrejestrowuje wątek `thread` z kolejki `queue`,
+    * nieodebrane przez wątek wiadomości są traktowane jako odebrane,
+5. `void addMsg(TQueue *queue, void *msg)`
+    * wstawia do kolejki `queue` nową wiadomość reprezentowaną wskaźnikiem `msg`.
+6. `void* getMsg(TQueue *queue, pthread_t thread)`
+    * odbiera pojedynczą wiadomość z kolejki `queue` dla wątku `thread`,
+    * jeżeli nie ma nowych wiadomości, funkcja jest blokująca,
+    * jeżeli wątek `thread` nie jest zasubskrybowany – zwracany jest pusty wskaźnik `NULL`,
+7. `int getAvailable(TQueue *queue, pthread_t thread)`
+    * zwraca liczbę wiadomości z kolejki queue dostępnych dla wątku `thread`,
+8. `void removeMsg(TQueue *queue, void *msg)`
+    * usuwa wiadomość `msg` z kolejki.
+9. `void setSize(TQueue *queue, int size)`
+    * ustala nowy, maksymalny rozmiar kolejki,
+    * jeżeli nowy rozmiar jest mniejszy od aktualnej liczby wiadomości w kolejce, to nadmiarowe wiadomości są usuwane
+  z kolejki, począwszy od najstarszych,
 
-Nazwy funkcji oraz nazwy zmiennych powinny być formatowane jako `kod źródłowy`.
+# 3. Algorytm
 
-Przykład:
-
-1. Elementy listy definiowane są strukturą `Node`:
-
-   ```C
-   struct Node {
-       void *data;
-       Node *next;
-   };
-   ```
-
-1. Zmienne `Head` i `Tail` wskazują odpowiednio na: początek i koniec listy:
-
-   ```C
-   Node *Head, *Tail;
-   ```
-
-# Funkcje
-
-Punkt ten powinien zawierać zwięzłe opisy funkcji zawartych w implementacji.
-Jeżeli specyfikacja zadania opisuje szczegółowo interfejs, to należy pominąć tą
-część i zamieścić jedynie opisy pozostałych, uzupełniających funkcji.
-
-Przykład:
-
-1. `resizeList(List *lst, int nsize)` -- ustalenie nowego rozmiaru listy `lst`
-   na `nsize`.
-
-1. `addItem(List *lst, void *ptr)` -- dodanie nowego elementu wskazywanego
-   wskaźnikiem `ptr` do listy `lst`.
-
-
-# Algorytm / dodatkowy opis
-
-Wizualizacja wyniku z pliku test.c:
+Wizualizacja wyniku z pliku `test.c`:
 ```python
 ─────────────────────────────────────────────────────────────────────────
 Faza      Wątek T₁       Wątek T₂         Wątek T₃         Wątek T₄
@@ -86,13 +91,13 @@ Faza      Wątek T₁       Wątek T₂         Wątek T₃         Wątek T₄
 ```
 
 
-# Przykład użycia
+# 4. Przykład użycia
 
 Dla wiadomości:
 ```
           m1: 1      m2: 2      m3: 3     m4: 4     m5: 5     m6: 6     m7: 7
 ```
-Oraz początkowym rozmiarze kolejki 2, gdzie -X- jest oczekiwaną odpowiedzią, wynik pliku test.c wynosi:
+Oraz początkowym rozmiarze kolejki 2, gdzie -X- jest oczekiwaną odpowiedzią, wynik pliku `test.c` wynosi:
 ```c
 1. Dodawanie wiadomości -1-: 1
 2. Wątek T2 zasubskrybował
