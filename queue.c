@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <math.h>
 #include "queue.h"
 
 TQueue* createQueue(int size) 
@@ -10,6 +11,8 @@ TQueue* createQueue(int size)
     queue->max_size = size;
     queue->sub = 0;
     queue->count_mess=0;
+    queue->max_sub=16;
+    queue->subscribers = malloc(sizeof(pthread_t *) * queue->max_sub);
     
     queue->mess = malloc(sizeof(void *) * queue->max_size);
     queue->who_can_read = malloc(sizeof(pthread_t *) * queue->max_size);
@@ -24,13 +27,15 @@ TQueue* createQueue(int size)
 
 void destroyQueue(TQueue *queue)
 {
+    if (queue == NULL)
+        return;
+    
     pthread_mutex_lock(&queue->mutex);
-
     free(queue->mess);
     free(queue->read_counters);
 
-    for (int i=0; i<queue->max_size; i++)
-        free(queue->who_can_read[i]);
+    //for (int i=0; i<queue->max_size; i++)
+        //free(queue->who_can_read[i]);
     free(queue->who_can_read);
 
     pthread_mutex_unlock(&queue->mutex);
@@ -39,11 +44,18 @@ void destroyQueue(TQueue *queue)
     pthread_cond_destroy(&queue->new_mess);
     
     free(queue);
+    queue=NULL;
 }
 
 void subscribe(TQueue *queue, pthread_t thread)
 {
     pthread_mutex_lock(&queue->mutex);
+
+    if (queue->sub == queue->max_sub)
+    {
+        queue->max_sub=queue->sub*queue->sub;
+        queue->subscribers = realloc(queue->subscribers, sizeof(pthread_t *) * queue->max_sub);
+    }
 
     queue->subscribers[queue->sub] = thread;
     queue->sub++;
@@ -102,6 +114,12 @@ void unsubscribe(TQueue *queue, pthread_t thread)
                 break; //sub. może odczytać daną wiadomość tylko raz
             }
         }
+    }
+
+    if (queue->sub < sqrt(queue->max_sub) && queue->max_sub > 16)
+    {
+        queue->max_sub=sqrt(queue->max_sub);
+        queue->subscribers = realloc(queue->subscribers, sizeof(pthread_t *) * queue->max_sub);
     }
 
     pthread_mutex_unlock(&queue->mutex);
